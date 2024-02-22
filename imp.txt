@@ -1,0 +1,244 @@
+// import { ConversationChain } from "langchain/chains";
+// import {
+//   ChatPromptTemplate,
+//   MessagesPlaceholder,
+// } from "@langchain/core/prompts";
+// import { BufferMemory } from "langchain/memory";
+// import { ChatOpenAI } from "@langchain/openai";
+
+// export const chatAPI=async(req,res)=>{
+//     try {
+//         const {ques}=req.body;
+//         const chatModel = new ChatOpenAI({
+//             model:"gpt-3.5-turbo",
+//             openAIApiKey: "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",
+//             temperature: 0.5
+//         });
+        
+//         const chatPrompt = ChatPromptTemplate.fromMessages([
+//           ["system", "You are a nice chatbot having a conversation with a human."],
+//           // The variable name here is what must align with memory
+//           new MessagesPlaceholder("history"),
+//           ["human", "{input}"],
+//         ]);
+        
+//         // Create Conversation Chain
+        
+//         const chain = new ConversationChain({
+//             memory: new BufferMemory({returnMessages:true, memoryKey:"history"}),
+//             prompt: chatPrompt,
+//             llm: chatModel
+//         })
+        
+//         const response =await chain.call({
+//             input: ques
+//         });
+//         res.status(200).json({
+//             output: response
+//         })
+        
+//     } catch (error) {
+//         res.status(200).json({ errors: [{ msg: error.message }] });
+//     }
+// };
+
+
+//export default chatAPI
+
+
+
+
+
+
+
+
+
+import { ConversationChain } from "langchain/chains";
+import {
+  ChatPromptTemplate,
+  MessagesPlaceholder,
+} from "@langchain/core/prompts";
+import { BufferMemory } from "langchain/memory";
+import { ChatOpenAI } from "@langchain/openai";
+
+// Store the last 5 chat messages as arrays
+let chatHistory = [];
+
+export const chatAPI = async (req, res) => {
+  try {
+    const { ques } = req.body;
+
+    const chatModel = new ChatOpenAI({
+      model: "gpt-3.5-turbo",
+      openAIApiKey: "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",
+      temperature: 0.5,
+    });
+
+    // Ensure chatHistory elements are arrays
+    chatHistory = chatHistory.map((message) => ["human", message]);
+
+    // Limit chatHistory to 5 messages
+    chatHistory = chatHistory.slice(-5); // Keep only the last 5 elements
+
+    // Construct chat prompt with proper history formatting
+    const chatPrompt = ChatPromptTemplate.fromMessages([
+      ["system", "You are a nice chatbot having a conversation with a human."],
+      ...chatHistory, // Add history messages directly
+      ["human", "{input}"],
+    ]);
+
+    // Create Conversation Chain
+    const chain = new ConversationChain({
+      memory: new BufferMemory({ returnMessages: true, memoryKey: "history" }),
+      prompt: chatPrompt,
+      llm: chatModel,
+    });
+
+    const response = await chain.call({ input: ques });
+
+    // Update chat history (ensuring it's an array of arrays)
+    chatHistory.push(["human", response]);
+    chatHistory = chatHistory.slice(-5); // Keep only the last 5 elements
+
+    res.status(200).json({ output: response });
+  } catch (error) {
+    res.status(200).json({ errors: [{ msg: error.message }] });
+  }
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// Import necessary modules
+// import { ChatMessageHistory } from "langchain/stores/message/in_memory";
+// import { ConversationChain } from "langchain/chains";
+// import { ChatPromptTemplate, MessagesPlaceholder } from "@langchain/core/prompts";
+// import { BufferMemory } from "langchain/memory";
+// import { ChatOpenAI } from "@langchain/openai";
+
+// // Store the last 5 chat messages
+// let chatHistory = [];
+
+// // Define API endpoint handler
+// export const chatAPI = async (req, res) => {
+//     try {
+//         const history = new ChatMessageHistory(); // Or retrieve from persistent storage
+//         const { ques } = req.body;
+
+//         // Create a new instance of ChatOpenAI
+//         const chatModel = new ChatOpenAI({
+//             model: "gpt-3.5-turbo",
+//             openAIApiKey: "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",
+//             temperature: 0.5
+//         });
+
+//         // Create a chat prompt template
+//         const chatHistoryMessages = history.getMessages();
+
+//         const chatPrompt = ChatPromptTemplate.fromMessages([
+//             ["system", "You are a nice chatbot having a conversation with a human."],
+//             ...chatHistoryMessages,
+//             ["human", "{input}"],
+//         ]);
+
+//         // Create Conversation Chain
+//         const chain = new ConversationChain({
+//             memory: new BufferMemory({ returnMessages: true, memoryKey: "history" }),
+//             prompt: chatPrompt,
+//             llm: chatModel
+//         });
+
+//         // Call conversation chain with user input
+//         const response = await chain.call({
+//             input: ques
+//         });
+        
+//         updateHistory(history, response, /* your persistence logic */);
+        
+//         res.status(200).json({
+//             output: response
+//         });
+//     } catch (error) {
+//         // Handle errors
+//         res.status(200).json({ errors: [{ msg: error.message }] });
+//     }
+// };
+
+
+
+
+
+
+
+
+
+
+// import { ChatOpenAI } from "@langchain/openai";
+// import { RunnableWithMessageHistory } from "@langchain/core/runnables";
+//   import { ConversationChain } from "langchain/chains";
+//   import {
+//     ChatPromptTemplate,
+//     MessagesPlaceholder,
+//   } from "@langchain/core/prompts";
+//   import { BufferMemory } from "langchain/memory";
+//   import { ChatMessageHistory } from "@langchain/community/stores/message/in_memory";
+  
+//   export const chatAPI = async (req, res) => {
+//     try {
+//       const { ques } = req.body; // Get the question from the request body
+  
+//       // Create ChatOpenAI model with specific configuration
+//       const chatModel = new ChatOpenAI({
+//         model: "gpt-3.5-turbo",
+//         openAIApiKey: "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",
+//         temperature: 0.5,
+//       });
+  
+//       // Construct prompt template for conversation
+//       const chatPrompt = ChatPromptTemplate.fromMessages([
+//         ["system", "You are a nice chatbot having a conversation with a human."],
+//         new MessagesPlaceholder("history"),
+//         ["human", "{input}"],
+//       ]);
+  
+//       // Create message history store
+//       const messageHistory = new ChatMessageHistory();
+  
+//       // Define a RunnableConfig object with session ID
+//       const config = { configurable: { sessionId: "1" } };
+  
+//       // Create RunnableWithMessageHistory to manage conversation history
+//       const withHistory = new RunnableWithMessageHistory({
+//         runnable: chatPrompt.pipe(chatModel),
+//         getMessageHistory: (_sessionId) => messageHistory,
+//         inputMessagesKey: "input",
+//         historyMessagesKey: "history",
+//         config,
+//       });
+  
+//       // Create ConversationChain with message history and prompt
+//       const chain = new ConversationChain({
+//         memory: new BufferMemory({ returnMessages: true, memoryKey: "history" }),
+//         prompt: withHistory, // Use withHistory to include conversation history
+//         llm: chatModel
+//       });
+  
+//       // Call the chain to generate a response
+//       const response = await chain.invoke({ input: ques });
+  
+//       res.status(200).json({ output: response });
+//     } catch (error) {
+//       res.status(200).json({ errors: [{ msg: error.message }] });
+//     }
+//   };
